@@ -80,8 +80,8 @@ pipeline {
         // }
 
         stage('Deploy to Target Machine') {
-            echo "Deploing"
             steps {
+                echo "Deploing"
                 sshagent(credentials: ['my-deploy-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
