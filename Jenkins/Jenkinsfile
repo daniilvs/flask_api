@@ -55,15 +55,18 @@ pipeline {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
                             set -euxo pipefail
-
                             echo "--- Connected to ${DEPLOY_HOST} ---"
-      
-                            mkdir -p ${DEPLOY_PATH}
-                            cd ${DEPLOY_PATH}
-                            echo "--- Changed directory to ${DEPLOY_PATH} ---"
-                            
-                            git clone https://github.com/daniilvs/flask_api.git .
-                            
+
+                            if [ ! -d "${DEPLOY_PATH}" ]; then
+                                mkdir -p "${DEPLOY_PATH}"
+                                cd "${DEPLOY_PATH}"
+                                git clone https://github.com/daniilvs/flask_api.git .
+                            else
+                                cd "${DEPLOY_PATH}"
+                                git fetch --all
+                                git reset --hard origin/main
+                            fi
+
                             docker pull ${DOCKER_IMAGE}:latest
                             docker-compose up -d --remove-orphans
                             echo "--- Application deployed successfully ---"
