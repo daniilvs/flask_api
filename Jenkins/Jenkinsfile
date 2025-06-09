@@ -39,12 +39,6 @@ pipeline {
         stage('Push') {
             steps {
                 echo "Pushing image"
-                // withCredentials([string(credentialsId: '21', variable: 'DOCKER_PASSWORD')]) {
-                //     sh '''
-                //         echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
-                //         docker push $DOCKER_IMAGE
-                //     '''
-                // }
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', '21') {
                         docker.image("${DOCKER_IMAGE}:latest").push()
@@ -88,12 +82,11 @@ pipeline {
         stage('Deploy to Target Machine') {
             steps {
                 echo "Deploing"
-                sshagent(credentials: ['my-deploy-ssh-key']) {
+                sshagent (credentials: ['my-deploy-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
                             echo "--- Connected to ${DEPLOY_HOST} ---"
-                            
-                            
+      
                             mkdir -p ${DEPLOY_PATH}
                             cd ${DEPLOY_PATH}
                             echo "--- Changed directory to ${DEPLOY_PATH} ---"
