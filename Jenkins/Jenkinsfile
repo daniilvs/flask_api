@@ -16,36 +16,49 @@ pipeline {
 
         stage('Test/Lint') {
             steps {
-                sh '''
-                    apt install flake8
-                    flake8  . 
-                '''
+                script {
+                    def image = docker.build(@DOCKER_IMAGE)
+                    image.inside {
+                        sh 'flake8  . '
+                        echo "Linting passed!"
+                    }
+                }
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Build') {
             steps {
                 sh '''
                     docker build -t $DOCKER_IMAGE .
                 '''
             }
         }
-        stage('Docker-Compose up') {
+        stage('Push') {
             steps {
-                sh '''
-                    docker-compose up -d
-                '''
-            }
-        }
-        stage('Push to Docker Registry') {
-            steps {
-                withCredentials([string(credentialsId: '21', variable: 'DOCKER_PASSWORD')]) {
-                    sh '''
-                        echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
-                        docker push $DOCKER_IMAGE
-                    '''
+                docker.withRegistry('https://registry.hub.docker.com', 21) {
+                    docker.image("${DOCKER_IMAGE_NAME}:latest").push()
+                    echo "Docker image pushed to Docker Hub."
                 }
             }
         }
+    
+        // stage('Docker-Compose up') {
+        //     steps {
+        //         sh '''
+        //             docker-compose up -d
+        //         '''
+        //     }
+        // }
+        // stage('Push to Docker Registry') {
+        //     steps {
+        //         withCredentials([string(credentialsId: '21', variable: 'DOCKER_PASSWORD')]) {
+        //             sh '''
+        //                 echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
+        //                 docker push $DOCKER_IMAGE
+        //             '''
+        //         }
+        //     }
+        // }
         stage('Cleanup After Tests') {
             steps {
                 sh '''
@@ -60,40 +73,40 @@ pipeline {
             }
         }
 
-        stage('Deploy to Target Machine') {
-            steps {
-                sshagent(credentials: ['my-deploy-ssh-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
-                            echo "--- Connected to ${DEPLOY_HOST} ---"
+    //     stage('Deploy to Target Machine') {
+    //         steps {
+    //             sshagent(credentials: ['my-deploy-ssh-key']) {
+    //                 sh """
+    //                     ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
+    //                         echo "--- Connected to ${DEPLOY_HOST} ---"
                             
                             
-                            mkdir -p ${DEPLOY_PATH}
-                            cd ${DEPLOY_PATH}
-                            echo "--- Changed directory to ${DEPLOY_PATH} ---"
+    //                         mkdir -p ${DEPLOY_PATH}
+    //                         cd ${DEPLOY_PATH}
+    //                         echo "--- Changed directory to ${DEPLOY_PATH} ---"
                             
-                            find . -mindepth 1 -delete
-                            git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+    //                         find . -mindepth 1 -delete
+    //                         git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
                             
                             
-                            docker-compose up -d --remove-orphans
-                            echo "--- Application deployed successfully ---"
+    //                         docker-compose up -d --remove-orphans
+    //                         echo "--- Application deployed successfully ---"
                             
                     
-                            docker image prune -f
-                            echo "--- Old Docker images pruned ---"
+    //                         docker image prune -f
+    //                         echo "--- Old Docker images pruned ---"
 
-                            docker build -t $DOCKER_IMAGE .
+    //                         docker build -t $DOCKER_IMAGE .
 
-                            docker-compose up -d
-                        '
-                    """
-                }
-            }
-        }
+    //                         docker-compose up -d
+    //                     '
+    //                 """
+    //             }
+    //         }
+    //     }
 
 
-    }
+    // }
     
     // post {
     //     success {
