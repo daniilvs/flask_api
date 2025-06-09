@@ -3,18 +3,17 @@ pipeline {
     environment {
         DOCKER_IMAGE = "dadanyanya/flask_api-backend"
         DOCKER_REGISTRY = "docker.io"
+        API_URL = "http://127.0.0.1:5000/ping"
+        DEPLOY_HOST = "ubuntu@37.9.53.210"
+        DEPLOY_PATH = "/home/app"
     }
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                withCredentials([string(credentialsId: '12', variable: 'GIT_TOKEN')]) {
-                    sh '''
-                        find . -mindepth 1 -delete
-                        git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
-                    '''
-                }
+                checkout scm
             }
         }
+
         stage('Test/Lint') {
             steps {
                 sh '''
@@ -60,12 +59,46 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy to Target Machine') {
+            steps {
+                sshagent(credentials: ['my-deploy-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
+                            echo "--- Connected to ${DEPLOY_HOST} ---"
+                            
+                            
+                            mkdir -p ${DEPLOY_PATH}
+                            cd ${DEPLOY_PATH}
+                            echo "--- Changed directory to ${DEPLOY_PATH} ---"
+                            
+                            find . -mindepth 1 -delete
+                            git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+                            
+                            
+                            docker-compose up -d --remove-orphans
+                            echo "--- Application deployed successfully ---"
+                            
+                    
+                            docker image prune -f
+                            echo "--- Old Docker images pruned ---"
+
+                            docker build -t $DOCKER_IMAGE .
+
+                            docker-compose up -d
+                        '
+                    """
+                }
+            }
+        }
+
+
     }
     
-    post {
-        success {
-            echo "Успешное выполнение, переходим к CD"
-            build job: 'CD'
-        }
-    }
+    // post {
+    //     success {
+    //         echo "Успешное выполнение, переходим к CD"
+    //         build job: 'CD'
+    //     }
+    // }
 }
