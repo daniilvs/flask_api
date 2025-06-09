@@ -3,9 +3,10 @@ pipeline {
     environment {
         DOCKER_IMAGE = "dadanyanya/flask_api-backend"
         DOCKER_REGISTRY = "docker.io"
-        API_URL = "http://127.0.0.1:5000/ping"
-        DEPLOY_HOST = "ubuntu@37.9.53.210"
-        DEPLOY_PATH = "/home/app"
+        API_URL = "http://37.9.53.210:5000/ping"
+        DEPOLY_USER="ubuntu"
+        DEPLOY_HOST = "37.9.53.210"
+        DEPLOY_PATH = "/home/${DEPLOY_USER}/app"
     }
     stages {
         stage('Checkout') {
@@ -18,21 +19,20 @@ pipeline {
             steps {
                 script {
                     def image = docker.build(${DOCKER_IMAGE})
-                    image.inside {
-                        sh 'flake8  . '
+                    image.inside('-u root') {
+                        sh 'flake8  /app '
                         echo "Linting passed!"
                     }
                 }
             }
         }
 
-        stage('Build') {
-            steps {
-                sh '''
-                    docker build -t $DOCKER_IMAGE .
-                '''
-            }
-        }
+        // stage('Build') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE}:latest")
+        //     }
+        // }
         stage('Push') {
             steps {
                 script {
@@ -75,37 +75,28 @@ pipeline {
             }
         }
 
-    //     stage('Deploy to Target Machine') {
-    //         steps {
-    //             sshagent(credentials: ['my-deploy-ssh-key']) {
-    //                 sh """
-    //                     ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
-    //                         echo "--- Connected to ${DEPLOY_HOST} ---"
+        stage('Deploy to Target Machine') {
+            steps {
+                sshagent(credentials: ['my-deploy-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
+                            echo "--- Connected to ${DEPLOY_HOST} ---"
                             
                             
-    //                         mkdir -p ${DEPLOY_PATH}
-    //                         cd ${DEPLOY_PATH}
-    //                         echo "--- Changed directory to ${DEPLOY_PATH} ---"
+                            mkdir -p ${DEPLOY_PATH}
+                            cd ${DEPLOY_PATH}
+                            echo "--- Changed directory to ${DEPLOY_PATH} ---"
                             
-    //                         find . -mindepth 1 -delete
-    //                         git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+                            git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
                             
-                            
-    //                         docker-compose up -d --remove-orphans
-    //                         echo "--- Application deployed successfully ---"
-                            
-                    
-    //                         docker image prune -f
-    //                         echo "--- Old Docker images pruned ---"
-
-    //                         docker build -t $DOCKER_IMAGE .
-
-    //                         docker-compose up -d
-    //                     '
-    //                 """
-    //             }
-    //         }
-    //     }
+                            docker pull ${DOCKER_IMAGE}:latest
+                            docker-compose up -d --remove-orphans
+                            echo "--- Application deployed successfully ---"
+                        '
+                    """
+                }
+            }
+        }
 
 
     }
