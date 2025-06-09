@@ -1,0 +1,65 @@
+// Адрес целевой машины и путь к приложению
+def DEPLOY_HOST = "ubuntu@37.9.53.210"
+def DEPLOY_PATH = "/home/app"
+
+pipeline {
+    agent any 
+    environment {
+        DOCKER_IMAGE = "dadanyanya/flask_api-backend"
+        DOCKER_REGISTRY = "docker.io"
+        API_URL = "http://127.0.0.1:5000/ping"
+
+    }
+    
+    stages {
+        stage('Deploy to Target Machine') {
+            steps {
+                sshagent(credentials: ['my-deploy-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
+                            echo "--- Connected to ${DEPLOY_HOST} ---"
+                            
+                            
+                            mkdir -p ${DEPLOY_PATH}
+                            cd ${DEPLOY_PATH}
+                            echo "--- Changed directory to ${DEPLOY_PATH} ---"
+                            
+                            find . -mindepth 1 -delete
+                            git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+                            
+                            
+                            docker-compose up -d --remove-orphans
+                            echo "--- Application deployed successfully ---"
+                            
+                    
+                            docker image prune -f
+                            echo "--- Old Docker images pruned ---"
+
+                            docker build -t $DOCKER_IMAGE .
+
+                            docker-compose up -d
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Test API Response') {
+            steps {
+                sh """
+                    RESPONSE=\$(curl -s ${API_URL})
+                    echo "Полученный ответ: \$RESPONSE"
+
+                    if echo "\$RESPONSE" | grep -q "ok"; then
+                        echo "API вернул корректный ответ."
+                    else
+                        echo "Ошибка: API не содержит 'ok'!"
+                        exit 1
+                    fi
+                """
+            }
+        }
+
+    }
+    
+}

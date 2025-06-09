@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "dadanyanya/flask_api-backend"
+        DOCKER_REGISTRY = "docker.io"
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                withCredentials([string(credentialsId: '098GIT', variable: 'GIT_TOKEN')]) {
+                    sh '''
+                        find . -mindepth 1 -delete
+                        git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+                    '''
+                }
+            }
+        }
+        stage('Test/Lint') {
+            steps {
+                sh '''
+                    sudo apt install flake8
+                    flake8  . 
+                '''
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build -t $DOCKER_IMAGE .
+                '''
+            }
+        }
+        stage('Docker-Compose up') {
+            steps {
+                sh '''
+                    docker-compose up -d
+                '''
+            }
+        }
+        stage('Push to Docker Registry') {
+            steps {
+                withCredentials([string(credentialsId: '111', variable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
+                        docker push $DOCKER_IMAGE
+                    '''
+                }
+            }
+        }
+        stage('Cleanup After Tests') {
+            steps {
+                sh '''
+                    rm -rf ./*
+                    docker stop flask_backend || true
+                    docker rm flask_backend || true
+                    docker stop postgres_db || true
+                    docker rm postgres_db || true
+                    docker rmi $DOCKER_IMAGE || true
+                    docker rmi postgres:16.1-alpine3.19 || true
+                '''
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Успешное выполнение, переходим к CD"
+            build job: 'CD'
+        }
+    }
+}
