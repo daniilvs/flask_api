@@ -18,7 +18,7 @@ pipeline {
         stage('Test/Lint') {
             steps {
                 script {
-                    def image = docker.build(${DOCKER_IMAGE})
+                    def image = docker.build("${DOCKER_IMAGE}:latest")
                     image.inside('-u root') {
                         sh 'flake8  /app '
                         echo "Linting passed!"
