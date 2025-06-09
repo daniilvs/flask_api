@@ -4,7 +4,7 @@ pipeline {
         DOCKER_IMAGE = "dadanyanya/flask_api-backend"
         DOCKER_REGISTRY = "docker.io"
         API_URL = "http://37.9.53.210:5000/ping"
-        DEPOLY_USER="ubuntu"
+        DEPLOY_USER="ubuntu"
         DEPLOY_HOST = "37.9.53.210"
         DEPLOY_PATH = "/home/${DEPLOY_USER}/app"
     }
