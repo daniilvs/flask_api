@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git url: "https://github.com/daniilvs/flask_api.git", branch: "main"
             }
         }
 
@@ -61,19 +61,19 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Cleanup After Tests') {
-            steps {
-                sh '''
-                    rm -rf ./*
-                    docker stop flask_backend || true
-                    docker rm flask_backend || true
-                    docker stop postgres_db || true
-                    docker rm postgres_db || true
-                    docker rmi $DOCKER_IMAGE || true
-                    docker rmi postgres:16.1-alpine3.19 || true
-                '''
-            }
-        }
+        // stage('Cleanup After Tests') {
+        //     steps {
+        //         sh '''
+        //             rm -rf ./*
+        //             docker stop flask_backend || true
+        //             docker rm flask_backend || true
+        //             docker stop postgres_db || true
+        //             docker rm postgres_db || true
+        //             docker rmi $DOCKER_IMAGE || true
+        //             docker rmi postgres:16.1-alpine3.19 || true
+        //         '''
+        //     }
+        // }
 
         stage('Deploy to Target Machine') {
             steps {
@@ -87,7 +87,7 @@ pipeline {
                             cd ${DEPLOY_PATH}
                             echo "--- Changed directory to ${DEPLOY_PATH} ---"
                             
-                            git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
+                            git clone https://github.com/daniilvs/flask_api.git .
                             
                             docker pull ${DOCKER_IMAGE}:latest
                             docker-compose up -d --remove-orphans
