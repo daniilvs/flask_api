@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                withCredentials([string(credentialsId: '098GIT', variable: 'GIT_TOKEN')]) {
+                withCredentials([string(credentialsId: '12', variable: 'GIT_TOKEN')]) {
                     sh '''
                         find . -mindepth 1 -delete
                         git clone https://daniilvs:$GIT_TOKEN@github.com/daniilvs/flask_api.git .
@@ -39,7 +39,7 @@ pipeline {
         }
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([string(credentialsId: '111', variable: 'DOCKER_PASSWORD')]) {
+                withCredentials([string(credentialsId: '21', variable: 'DOCKER_PASSWORD')]) {
                     sh '''
                         echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
                         docker push $DOCKER_IMAGE
