@@ -17,7 +17,7 @@ pipeline {
         stage('Test/Lint') {
             steps {
                 sh '''
-                    sudo apt install flake8
+                    apt install flake8
                     flake8  . 
                 '''
             }
