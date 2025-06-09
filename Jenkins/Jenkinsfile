@@ -48,43 +48,14 @@ pipeline {
             }
         }
     
-        // stage('Docker-Compose up') {
-        //     steps {
-        //         sh '''
-        //             docker-compose up -d
-        //         '''
-        //     }
-        // }
-        // stage('Push to Docker Registry') {
-        //     steps {
-        //         withCredentials([string(credentialsId: '21', variable: 'DOCKER_PASSWORD')]) {
-        //             sh '''
-        //                 echo "$DOCKER_PASSWORD" | docker login -u dadanyanya --password-stdin
-        //                 docker push $DOCKER_IMAGE
-        //             '''
-        //         }
-        //     }
-        // }
-        // stage('Cleanup After Tests') {
-        //     steps {
-        //         sh '''
-        //             rm -rf ./*
-        //             docker stop flask_backend || true
-        //             docker rm flask_backend || true
-        //             docker stop postgres_db || true
-        //             docker rm postgres_db || true
-        //             docker rmi $DOCKER_IMAGE || true
-        //             docker rmi postgres:16.1-alpine3.19 || true
-        //         '''
-        //     }
-        // }
-
         stage('Deploy to Target Machine') {
             steps {
                 echo "Deploing"
                 sshagent (credentials: ['my-deploy-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
+                            set -euxo pipefail
+
                             echo "--- Connected to ${DEPLOY_HOST} ---"
       
                             mkdir -p ${DEPLOY_PATH}
@@ -101,14 +72,5 @@ pipeline {
                 }
             }
         }
-
-
     }
-    
-    // post {
-    //     success {
-    //         echo "Успешное выполнение, переходим к CD"
-    //         build job: 'CD'
-    //     }
-    // }
 }
