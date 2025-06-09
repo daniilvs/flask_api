@@ -20,7 +20,7 @@ pipeline {
                 script {
                     def image = docker.build("${DOCKER_IMAGE}:latest")
                     image.inside('-u root') {
-                        sh 'apt install flake8'
+                        sh 'python -m pip install flake8'
                         sh 'flake8  /app '
                         echo "Linting passed!"
                     }
