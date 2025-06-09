@@ -15,10 +15,11 @@ pipeline {
             }
         }
         stage('Build') {
-        steps {
-            echo "Building image"
-            script {
-                docker.build("${DOCKER_IMAGE}:latest")
+            steps {
+                echo "Building image"
+                script {
+                    docker.build("${DOCKER_IMAGE}:latest")
+                }
             }
         }
 
